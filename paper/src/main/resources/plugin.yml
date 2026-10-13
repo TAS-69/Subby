@@ -8,8 +8,48 @@ commands:
   subby:
     description: Manage Twitch and subscriber books.
     usage: /subby help
-    permission: subby.admin
 permissions:
   subby.admin:
     description: Link Twitch, manage books, and configure Subby.
     default: op
+    children:
+      subby.use: true
+      subby.book: true
+      subby.connect: true
+      subby.appearance: true
+      subby.rules: true
+      subby.bind: true
+      subby.moderate: true
+      subby.configure: true
+      subby.test: true
+      subby.pause: true
+  subby.use:
+    description: Open Subby menus for an accessible profile.
+    default: false
+  subby.book:
+    description: Read books, previews, status, and supporter records in the default profile.
+    default: false
+  subby.connect:
+    description: Manage Twitch sign-in for the default profile.
+    default: false
+  subby.appearance:
+    description: Edit book appearance in the default profile.
+    default: false
+  subby.rules:
+    description: Edit and test optional rules in the default profile.
+    default: false
+  subby.bind:
+    description: Bind and unbind physical book locations in the default profile.
+    default: false
+  subby.moderate:
+    description: Moderate names in the default profile.
+    default: false
+  subby.configure:
+    description: Configure safety, presets, optional events, and chat in the default profile.
+    default: false
+  subby.test:
+    description: Preview and run local test effects in the default profile.
+    default: false
+  subby.pause:
+    description: Pause and resume optional effects in the default profile.
+    default: false

@@ -9,26 +9,28 @@ $projectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $projectRoot
 if ($JavaHome) { $env:JAVA_HOME = $JavaHome }
 $matrix = Get-Content -LiteralPath 'versions.json' -Raw | ConvertFrom-Json
+$releaseVersion = ((Get-Content -LiteralPath 'gradle.properties' | Where-Object { $_ -match '^version=' }) -replace '^version=','').Trim()
+$releaseDirectory = Join-Path $projectRoot "dist\$releaseVersion"
 if ($Versions.Count -eq 0) { $Versions = $matrix.PSObject.Properties.Name }
 foreach ($minecraft in $Versions) { if (-not ($matrix.PSObject.Properties.Name -contains $minecraft)) { throw "Unknown target: $minecraft" } }
-New-Item -ItemType Directory -Force -Path 'dist\logs' | Out-Null
+New-Item -ItemType Directory -Force -Path (Join-Path $releaseDirectory 'logs') | Out-Null
 $results = $Versions | ForEach-Object -ThrottleLimit $MaxParallel -Parallel {
     $minecraft = $_
     $root = $using:projectRoot
     Set-Location -LiteralPath $root
     $env:JAVA_HOME = $using:JavaHome
     Write-Host "Building isolated Minecraft $minecraft..."
-    $logPath = Join-Path $root "dist\logs\$minecraft.log"
+    $logPath = Join-Path $using:releaseDirectory "logs\$minecraft.log"
     $cachePath = Join-Path $root "build\project-caches\$minecraft"
     & .\gradlew.bat "-Pmc=$minecraft" '-PisolatedBuild=true' '--project-cache-dir' $cachePath '-Dorg.gradle.jvmargs=-Xmx2G' ':fabric:build' ':neoforge:build' '--console=plain' *> $logPath
     $success = $LASTEXITCODE -eq 0
     if ($success) {
         foreach ($loader in @('fabric','neoforge')) {
-            Copy-Item -LiteralPath (Join-Path $root "build\targets\$minecraft\$loader\libs\subby-$loader-$minecraft-1.0.0.jar") -Destination (Join-Path $root 'dist')
+            Copy-Item -LiteralPath (Join-Path $root "build\targets\$minecraft\$loader\libs\subby-$loader-$minecraft-$using:releaseVersion.jar") -Destination $using:releaseDirectory
         }
         Write-Host "Minecraft $minecraft passed."
     } else { Write-Warning "Minecraft $minecraft failed; see $logPath" }
     [pscustomobject]@{ minecraft = $minecraft; built = $success }
 }
-ConvertTo-Json -InputObject @($results) | Set-Content -LiteralPath 'dist\build-results.json' -Encoding utf8
+ConvertTo-Json -InputObject @($results) | Set-Content -LiteralPath (Join-Path $releaseDirectory 'build-results.json') -Encoding utf8
 if ($results.built -contains $false) { throw 'One or more isolated builds failed. Inspect dist/logs.' }

@@ -13,3 +13,11 @@ fabric-loaders.json
 minecraft-versions.json
 dist/
 mockbukkit-*.xml
+**/logs/
+**/companion-credentials.json
+**/name-filters.json
+**/effect-queue.json
+**/physical-state.json
+**/bindings.json
+**/runtime.json
+**/profiles.json

@@ -15,6 +15,8 @@ public final class Ledger {
     private final Set<String> seen = new HashSet<>();
     private Header header;
     private Book latest;
+    private final SupporterRegistry registry = new SupporterRegistry();
+    private final Set<String> subscribers = new HashSet<>();
 
     public Ledger(Path directory) throws IOException {
         this.directory = directory;
@@ -34,7 +36,7 @@ public final class Ledger {
                     try {
                         Subscriber entry = JsonFiles.GSON.fromJson(line, Subscriber.class);
                         if (entry == null) throw new IllegalArgumentException();
-                        if (seen.add(entry.messageId())) entries.add(entry);
+                        if (seen.add(entry.messageId())) { entries.add(entry); registry.record(entry); if (entry.subscription()) subscribers.add(entry.userId()); }
                     } catch (RuntimeException e) {
                         throw new IOException("Damaged subscriber journal at line " + lineNumber + ". Restore a backup; the original is preserved.", e);
                     }
@@ -52,11 +54,12 @@ public final class Ledger {
                 }
             }
         }
-        latest = Book.create(header.libraryId, entries, 0);
+        latest = null;
     }
 
     public synchronized boolean append(Subscriber entry) throws IOException {
         if (seen.contains(entry.messageId())) return false;
+        if (entry.kind().equals("sync") && subscribers.contains(entry.userId())) return false;
         if (!entry.broadcasterId().isEmpty()) {
             if (!header.broadcasterId.isEmpty() && !header.broadcasterId.equals(entry.broadcasterId()))
                 throw new IOException("This library belongs to another Twitch channel. Use another world or restore its account.");
@@ -73,19 +76,22 @@ public final class Ledger {
         }
         seen.add(entry.messageId());
         entries.add(entry);
-        latest = Book.create(header.libraryId, entries, 0);
+        registry.record(entry); if (entry.subscription()) subscribers.add(entry.userId());
+        latest = null;
         return true;
     }
 
-    public synchronized Book book(int volume) { return volume == 0 ? latest : Book.create(header.libraryId, entries, volume); }
+    public synchronized Book book(int volume) {
+        if (volume != 0) return Book.create(header.libraryId, entries, volume);
+        if (latest == null) latest = Book.create(header.libraryId, entries, 0);
+        return latest;
+    }
+    public synchronized List<Subscriber> entries() { return List.copyOf(entries); }
+    public synchronized String libraryId() { return header.libraryId; }
     public synchronized int size() { return entries.size(); }
     public synchronized String broadcasterId() { return header.broadcasterId; }
     public synchronized String supporter(String name) {
-        List<Subscriber> matches = entries.stream().filter(e -> e.name().equalsIgnoreCase(name)).toList();
-        if (matches.isEmpty()) return "No supporter named " + name + " has been recorded.";
-        Subscriber latest = matches.getLast();
-        return latest.name() + " | " + matches.size() + " events | first seen " + matches.getFirst().receivedAt() +
-                " | " + matches.stream().mapToInt(Subscriber::months).max().orElse(1) + " months | tier " + latest.tier() +
-                " | gifted subscriptions received " + matches.stream().filter(e -> e.kind().equals("gift")).count();
+        return registry.find(name).map(SupporterRegistry.Supporter::summary).orElse("No supporter named " + name + " has been recorded.");
     }
+    public synchronized List<SupporterRegistry.Supporter> supporters() { return registry.all(); }
 }

@@ -1,152 +1,125 @@
-# Subby
+# Subby preview guide
 
+This guide describes 1.1.0-beta.1. For the original stable release, use the [1.0.0 guide](releases/1.0.0-guide.md).
 
-Subby turns Twitch subscriptions into a living Minecraft subscriber library. New subscriptions, gifted subscription **recipients**, and optional resubscription messages are saved automatically, then written into Minecraft books.
+## First book
 
-This repository contains Fabric and NeoForge mods and a conventional Paper server plugin. The release matrix covers every Java Edition release from **1.21.1 through 26.3**, including 1.21.2–1.21.11 and 26.1/26.1.1/26.1.2/26.2. Each mod JAR targets one exact Minecraft release. The Paper plugin uses the 1.21.1 Bukkit API and one JAR covers the range. Check [VALIDATION.md](VALIDATION.md) for the builds and runtime checks actually completed.
+Install the JAR matching your loader and Minecraft version. Fabric also needs Fabric API. Paper needs only the plugin JAR. Multiplayer installations run on the server; no separate client installation is needed to open the vanilla inventory menus.
 
-## What is implemented
+Ask the Companion operator for the service address, or run the [self-hosted Companion](COMPANION.md). The default address is `http://localhost:3030`. Change it under **Advanced → Connection settings** if necessary.
 
-- Browser sign-in with Twitch's device authorization flow; no client secret in the game or a public webhook server.
-- Automatic reconnect with backoff, keepalive monitoring, Twitch-directed socket handover, token rotation, and periodic token validation.
-- A durable, per-world subscription journal with event-ID duplicate protection across restarts. The book is a view of the journal, so losing a book does not lose subscriber names.
-- Live written books in online players' inventories and any number of bound lecterns. Books refresh once per second, including after a player reconnects.
-- Automatic pages and volumes: four names per page, 100 pages / 400 entries per volume. Long names wrap explicitly to fit. `/subby book` follows the latest volume; `/subby book 1` retrieves a static archive.
-- Configurable subscription rules: messages, sounds, and fixed datapack functions. Effect cooldowns, a bounded effect queue, and pause/resume protect busy servers while every received subscription is saved.
-- A supporter lookup showing recorded events, first seen, maximum reported subscription months, latest tier, and gifted subscriptions received.
-- Operator-only management commands, names stripped of control/formatting characters, and preservation of unrelated books in bound lecterns.
+Run `/subby connect`. Minecraft privately shows a pairing code and browser link. Match the code, sign in to Twitch as the broadcaster, and confirm the channel. Twitch passwords and Twitch tokens stay outside Minecraft.
 
-The first release focuses on the subscriber library and a small event-to-action system. A graphical rule editor, bits, raids, follows, channel points, gift-giver attribution, signs/chests, moderation tools, multiple Twitch accounts, and additional visual actions are future work. They are not implemented by this release.
+Run `/subby`, then click **Get your subscriber book**. Names arrive as subscription events occur. You can carry the live book or look at an empty lectern and click **Put it on a lectern**. Names are saved even if the item is lost.
 
-## Install
+## Book settings
 
-1. Pick **one** platform. Do not put a plugin into `mods`, or a mod into `plugins`.
-2. For Fabric, install Fabric Loader **0.19.5 or newer** and the Fabric API matching your exact Minecraft release. Put `subby-fabric-<minecraft>-1.0.0.jar` in `mods`.
-3. For NeoForge, install the NeoForge version listed in [versions.json](versions.json) for your Minecraft release (or a compatible newer build). Put `subby-neoforge-<minecraft>-1.0.0.jar` in `mods`. Some intermediate NeoForge releases are only available as beta builds; those are pinned explicitly.
-4. For Paper, put `subby-paper-1.21.1-26.3-1.0.0.jar` in `plugins`.
-5. Use Java 21 for Minecraft 1.21.x and Java 25 for Minecraft 26.x. Start the game/server once.
+The main menu contains connection, book, lectern, sample preview, saved volumes, and help. **What goes in the book?** controls new subscribers, gift recipients, and shared resubscription messages.
 
-On a dedicated server, install Subby on the server. Players use normal Minecraft written books. In singleplayer, install the Fabric or NeoForge build in the creator's game. Management commands require operator permissions / enabled cheats. The Paper permission is `subby.admin` (defaults to operators).
+**Advanced → Book appearance** contains title, author, line format, sorting, headers/footers, opening pages, layout, colours, clickable names, tier symbols, milestone styling, monthly headings, and Roman numerals. **More text options** contains prefix/suffix, display/login choice, and optional player binding.
 
-## Connect Twitch
+The default is four entries per page. Page layout also accounts for text width and the 14-line page height. Long templates can span pages. Every volume holds at most 100 pages. The live item follows the newest volume; **Saved volumes** creates snapshot copies of earlier books.
 
-Twitch requires a registered application client ID. This repository does not contain a shared Twitch application or credentials.
+Registry view keeps one row per Twitch user ID, using the newest subscription identity/tier and the highest reported month count. Historical view keeps separate subscription events. Founder labels are assigned manually in moderation; subscriptions do not contain a reliable founder badge field.
 
-1. In the [Twitch developer console](https://dev.twitch.tv/console/apps), register an application named Subby. Choose a **Public** client type, which permits device-flow token refresh without a secret. If the registration form requests a redirect URL, use `http://localhost`; Subby's device flow does not use it.
-2. Copy the application's **Client ID**.
-3. As an operator, run `/subby setup <clientId>`.
-4. Run `/subby login`. Open the Twitch activation URL shown privately in the command response and approve it **as the broadcaster**, not a moderator or bot account.
-5. Run `/subby status`. It should report `Connected to Twitch`.
-6. Run `/subby book` to get your live subscriber book. Use `/subby test sub ExampleName` to verify the book updates without buying a subscription. Test commands permanently add a demo entry to this world's journal; use a test world for experimentation.
+## Visual rules
 
-The only Twitch scope requested is `channel:read:subscriptions`. Twitch subscriptions must be enabled for the broadcaster's channel. Signing into a different channel after recording real entries is rejected by the library's channel check, so unrelated channels cannot accidentally mix.
+Open **Advanced → Visual rule editor → Add a rule**.
 
-To create a subscriber shrine, look at an empty lectern within six blocks and run `/subby lectern bind`. Subby inserts and updates a live book there. A non-Subby book is never overwritten. The lectern must be in a loaded chunk; Subby does not force-load chunks. Use `/subby lectern unbind` before removing a book you want to keep as an archive. An empty bound lectern is refilled automatically.
+1. Choose **WHEN**: the Twitch event.
+2. Choose optional **IF** conditions: months, tier, amount, reward ID, combo size, or cooldown.
+3. Click **Add an action** and choose **DO**: a message, sound, item, or another supported action.
 
-## Commands
+Common resources have visual pickers. Text and custom IDs use a temporary private chat prompt. Type `cancel` to return. Prompt answers are cancelled before broadcast to other players. Other server plugins may still inspect chat events.
+
+Enable **Extra interactions** when the rules are ready. Optional Twitch event types also need a reconnect to approve their permissions. Direct Twitch mode supports only the three original subscription event types; Companion supplies the extra types.
+
+The amount condition means Bits, gift-batch size, raid viewers, Hype Train level, or months, according to event type. Reward conditions use the reward’s ID. Random pools choose one action using its weight; ordinary rules run all actions. Higher priorities run first.
+
+## Queue, combos, and safety
+
+Open **Advanced → Safety and queue**. Defaults are 256 pending effects and four effects per one-second interval. Pending effects survive restart by default. Limits and cooldowns apply to optional effects; subscriber journal entries are still saved.
+
+The combo window counts nearby subscription/resubscription/recipient events together. Other event kinds have separate counters. Use `{combo_count}` in messages or a minimum-combo condition. **Combine repeated effects** waits for the configured window and merges identical actions from the same rule/event kind. Every subscriber remains in the journal.
+
+Paused effects wait while books continue recording and updating. Disabling Advanced also stops optional rule processing. Removed or disabled rules do not execute their old queued actions. Effects may repeat if the server crashes after executing an action but before saving its queue progress; book entries remain deduplicated.
+
+Select an **Effect player** before player-specific actions. Commands, functions, mobs, redstone, and unknown/harmful potion effects require dangerous actions to be enabled. Commands/functions also require an exact allowlist entry, such as `function subby:on_sub`. Hardcore protection blocks dangerous actions in Hardcore worlds. Health, nearby wither/dragon/active raid, dimension, item-per-minute, and mob-per-minute limits are available. Raw commands/functions can perform more than the built-in item/mob limits can inspect; only approve commands you intend to run.
+
+## Physical locations
+
+Open **Advanced → Physical locations** while looking at the target block. Choose a type and enter a short binding name.
+
+| Type | Behavior |
+| --- | --- |
+| Archive chest | Maintains copies of completed volumes in a chest/barrel. Missing copies can be restored. |
+| Live book chest | Keeps the current live book in a chest/barrel. |
+| Items and keepsakes chest | Rules put items into empty chest/barrel slots. |
+| Subscriber sign | Writes the front of a configured sign. |
+| Floating text | Creates and updates a vanilla Text Display above the target block. |
+| Button pulse | A rule presses a bound button, then resets it. |
+
+Boards can show the latest subscriber, recent subscribers/events, top gifters/Bits, or rule-controlled text. Signs have four lines; floating text suits longer displays. Choose wall mode on several signs/displays to assign consecutive groups of four known supporters. Lecterns and archive books can complete the supporter hall.
+
+Book destinations keep updating while Advanced effects are off. Optional boards/effects need Advanced enabled. Targets update only in loaded chunks. Chests preserve unrelated contents and stop accepting items when full. Binding a sign replaces its front text. Unbinding leaves existing blocks, books, and displays in place. Pending button resets are saved and retried after restart/chunk loading.
+
+Keepsake actions create written-book items named after the supporter. They can go to the selected player or a named chest through the action’s destination setting. Minecraft player-head skin linking is not supplied.
+
+## Testing and dashboard
+
+The main menu’s **Preview** creates a sample book without changing the journal. **Advanced → Test an event** lets you choose the event, sample name, amount, tier, combo, and reward ID. Preview shows matching rules and text. **Run optional test effects** asks for confirmation, uses the ordinary safety limits, and never records fake subscriber entries. Pending tests are not restored after restart.
+
+**Connection and queue** shows connection state, book entries, volumes/pages, people recorded, today’s event count in UTC, queue size, and physical bindings. Click to refresh.
+
+## Profiles and access
+
+Use **Advanced → Profiles** or `/subby profile`. Each profile has separate sign-in, rules, settings, and journal. Server administrators create profiles and grant access:
+
+```text
+/subby profile create survival
+/subby profile switch survival
+/subby profile grant survival <Minecraft player UUID> book,connect,appearance,rules,bind,moderate,configure,test,pause
+/subby profile revoke survival <Minecraft player UUID>
+```
+
+Paper has matching `subby.book`, `subby.connect`, `subby.appearance`, `subby.rules`, `subby.bind`, `subby.moderate`, `subby.configure`, `subby.test`, and `subby.pause` permissions for the default profile. `subby.admin` grants full administration. Profile delegation works on all platforms, including without an external permissions plugin.
+
+## Presets and moderation
+
+Book-only, Friendly, and Hardcore presets are available. Import/export uses files in that profile’s `settings/presets` folder. Import backs up existing settings, leaves Advanced off, and clears command approvals, dangerous actions, player bindings, and server-specific filtering. Export excludes credentials, private user lists, and player bindings.
+
+Name moderation can block users/words, hide or restore names, choose removal placeholders, and mark founders. Known names resolve to Twitch user IDs so a rename does not undo a manual block. `/subby remove <name>` and `/subby restore <name>` are available. The raw private journal remains intact. Live books and boards update; archive copies already taken out of managed storage remain snapshots.
+
+Twitch ban/timeout filtering is optional and needs moderation permission approval. It applies to events observed after enabling; existing bans are not automatically fetched. Timeouts stop hiding names after their supplied expiry. The configured Minecraft text filter is supported on Fabric/NeoForge when the selected online player has an active server filter. Unchecked names stay hidden until processing completes. Paper does not expose that filter; local user/word filtering remains available.
+
+## Other commands
 
 | Command | Purpose |
 | --- | --- |
-| `/subby help` | List commands |
-| `/subby setup <clientId>` | Save the public Twitch application ID |
-| `/subby login` | Start broadcaster browser sign-in |
-| `/subby connect` | Connect using the saved account |
-| `/subby disconnect` | Stop receiving Twitch events until reconnect/restart |
-| `/subby logout` | Disconnect and remove local tokens |
-| `/subby status` | Connection, recorded names, volumes, lecterns, effect queue |
-| `/subby book` | Recover/create a live latest-volume book |
-| `/subby book <volume>` | Create a static archive of a particular volume |
-| `/subby lectern bind` / `unbind` | Manage the lectern you are looking at |
-| `/subby supporter <name>` | Look up a recorded supporter |
-| `/subby pause` / `resume` | Pause/drain effects; recording and books continue |
-| `/subby test [sub\|resub\|gift] <name>` | Permanently record a local demo event and run its rules |
-| `/subby reload` | Reload settings/rules and reconnect |
+| `/subby` | Open the visual menu. |
+| `/subby connect` | Pair or reconnect. |
+| `/subby disconnect` | Stop this installation’s connection. |
+| `/subby logout` | Unlink/remove the selected connection’s sign-in. |
+| `/subby status` | Show status in chat/console. |
+| `/subby book [volume]` | Recover the live book or a snapshot volume. |
+| `/subby lectern bind` | Bind the lectern you are looking at. |
+| `/subby lectern unbind` | Remove that lectern binding. |
+| `/subby pause`, `/subby resume` | Pause/resume optional effects. |
+| `/subby supporter <name or ID>` | Look up saved supporter statistics. |
+| `/subby test bits ExampleViewer 500` | Preview a sample event; no effects run. |
+| `/subby recover` | Request missing current active subscribers from Companion. |
+| `/subby preset export <name>` | Export a shareable preset. |
+| `/subby preset import <name>` | Import a preset file. |
+| `/subby reload` | Reload validated settings. |
 
-## Settings and rules
+Direct mode is an advanced fallback. Register a Public Twitch application, select Direct under Connection settings, then use `/subby setup <clientId>` and `/subby login`. Never enter a Twitch application secret or password into Minecraft.
 
-Mods store settings in `config/subby/`. The plugin uses `plugins/Subby/`. Edit `config.json`, then run `/subby reload`:
+## Backups and recovery
 
-```json
-{
-  "clientId": "YOUR_PUBLIC_CLIENT_ID",
-  "autoConnect": true,
-  "includeResubscriptions": true,
-  "announceSubscribers": false
-}
-```
+Back up the world’s `subby` folder. The default library keeps its original `subscribers.jsonl` and `library.json` location. Per-world settings live in `subby/profiles/default/settings`; additional profiles have their own settings/library folders. Existing 1.0 settings are copied without deleting the originals.
 
-`rules.json` starts with no extra effects. Add rules only if you want them. Here is an example that also calls a datapack function:
+`credentials.json` contains direct-mode Twitch tokens; `companion-credentials.json` contains this installation’s private service token. Keep them out of modpacks, screenshots, source control, and exported presets. Unlinking Companion removes its service-side installation and pending deliveries, while Minecraft’s saved history remains.
 
-```json
-{
-  "rules": [
-    {
-      "event": "sub",
-      "minimumMonths": 0,
-      "cooldownSeconds": 2,
-      "actions": [
-        {"type": "message", "value": "Thank you, {display_name}! You joined the book."},
-        {"type": "sound", "value": "minecraft:block.note_block.bell"},
-        {"type": "function", "value": "subby:on_sub"}
-      ]
-    },
-    {
-      "event": "resub",
-      "minimumMonths": 12,
-      "cooldownSeconds": 5,
-      "actions": [
-        {"type": "message", "value": "{user} returned for month {months}!"}
-      ]
-    }
-  ]
-}
-```
+Companion buffers Minecraft outages while it stays connected to Twitch. Twitch does not replay all missed events after a Companion/Twitch outage. Current-subscriber recovery adds users not already represented in the library, with unknown original dates/months. It does not recreate old renewals, gifts, Bits, rewards, or historical events.
 
-Supported event kinds are `sub`, `resub`, and `gift`. Message placeholders are `{user}`, `{display_name}`, `{months}`, `{tier}`, `{kind}`, and `{timestamp}`. A `gift` means the **recipient** of a gifted subscription; Twitch's separate mass-gift event is not also added, which avoids writing recipients twice.
-
-Sound and function IDs must be fixed namespaced IDs. Viewer-controlled text cannot become a command. A function runs with the server console's authority and can use normal Minecraft commands, so install only datapacks you intend to run. For example, create `data/subby/function/on_sub.mcfunction` in a datapack with the pack format appropriate to your Minecraft version:
-
-```mcfunction
-execute as @a at @s run particle minecraft:heart ~ ~2 ~ 0.4 0.4 0.4 0.02 8 force @s
-```
-
-At most four effects run per second. At most 256 effects wait in memory. If the queue fills, extra effects are skipped and logged; subscriber names are still saved. Cooldowns also apply only to effects. Pausing does not pause the book. Effects waiting in memory do not survive a server restart.
-
-## Data, recovery, and limits
-
-The primary world contains `subby/library.json`, `subby/subscribers.jsonl`, and `subby/lecterns.json`. Back up this directory with the world. The JSON-lines journal records each event ID, broadcaster/user IDs, sanitized display name, subscription kind, tier, reported months, and receipt time. Repeated subscriptions remain separate historical events; duplicate Twitch **message IDs** are ignored. `/subby supporter` derives a summary from those records.
-
-`credentials.json` contains private OAuth tokens. Never share it, include it in a modpack, or show it on stream. `/subby logout` removes local credentials; revoke application access in [Twitch connections](https://www.twitch.tv/settings/connections) to revoke access at Twitch too. Configurations and rules can be shared after removing account-specific information; tokens and supporter data should stay private.
-
-Subby saves an event to disk before making it visible in Minecraft. A damaged journal/configuration causes a clear startup failure and is preserved for recovery. If storage fails while recording, Subby logs the problem and disconnects rather than continuing to claim it is recording. Restore the file from your backup, then restart.
-
-Twitch EventSub delivers live events; **it does not replay notifications missed during an ordinary connection outage or while Minecraft is closed**. Automatic reconnect minimizes the gap, but this release cannot reconstruct missed events. Twitch's resub event represents a viewer sharing a resubscription chat message, not every automatic monthly renewal. Gift-recipient events do not identify the gift giver. Live inventory books update when their player is online; books in ordinary chests or dropped item entities are not live targets. Use bound lecterns for unattended display.
-
-Lectern bindings are specific to a platform's world identifier and do not migrate automatically between a modded server and Paper. Copying the subscriber journal to another platform preserves the names; bind the lecterns again.
-
-## Build
-
-Install JDK 25 to run Gradle and keep JDK 21 available as a Gradle toolchain for 1.21.x and the portable plugin/core. Set `JAVA_HOME` to JDK 25. This project uses the Gradle wrapper and pinned dependencies in [versions.json](versions.json).
-
-```powershell
-.\gradlew.bat build
-
-.\gradlew.bat '-Pmc=26.3' :fabric:build :neoforge:build
-
-.\gradlew.bat -Pplatform=paper :core:test :paper:build
-
-.\scripts\build-all.ps1 -JavaHome 'C:\path\to\jdk-25'
-```
-
-Installable files are in each platform's `build/libs`, or together in `dist` after the matrix script. Do not install `-sources.jar` files. Minecraft's code and game assets are downloaded by the official loader build tools and are not distributed in Subby.
-
-## Technical references
-
-The supplied `Subby-logo.svg` is the original branding artwork. Fabric and NeoForge include PNG icons rendered from it without changing the artwork.
-
-- [Twitch device authentication](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#device-code-grant-flow)
-- [Twitch EventSub WebSocket lifecycle and outage limitations](https://dev.twitch.tv/docs/eventsub/handling-websocket-events/)
-- [Subscription event types and authorization](https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types/#channel-subscribe)
-- [Fabric's Minecraft 26.3 release notes](https://www.fabricmc.net/2026/09/15/263.html)
-- [NeoForge documentation](https://docs.neoforged.net/)
-- [Paper plugin development](https://docs.papermc.io/paper/dev/getting-started/)
+Malformed or damaged journals/settings are preserved and cause a startup error. Restore a backup before restarting. Storage failures prevent delivery acknowledgements so Companion can retry.

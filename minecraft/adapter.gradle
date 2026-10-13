@@ -6,13 +6,74 @@ tasks.register('generateCompat') {
     inputs.property 'mc', rootProject.targetMc
     doLast {
         def newerPermissions = rootProject.modern || rootProject.targetMc == '1.21.11'
+        def newerLinks = rootProject.modern || (rootProject.targetMc.split('\\.').last() as int) >= 5
         def f = compatDir.get().file('dev/subby/minecraft/Compat.java').asFile
         f.parentFile.mkdirs()
         f.text = """package dev.subby.minecraft;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.ClickEvent;
 public final class Compat {
     public static boolean allowed(CommandSourceStack source) {
         return ${newerPermissions ? 'source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)' : 'source.hasPermission(2)'};
+    }
+    public static ClickEvent link(String url) {
+        return ${newerLinks ? 'new ClickEvent.OpenUrl(java.net.URI.create(url))' : 'new ClickEvent(ClickEvent.Action.OPEN_URL, url)'};
+    }
+    public static String dimension(net.minecraft.server.level.ServerPlayer player) {
+        return player.level().dimension().${newerPermissions ? 'identifier' : 'location'}().toString();
+    }
+    public static String dimension(net.minecraft.server.level.ServerLevel level) {
+        return level.dimension().${newerPermissions ? 'identifier' : 'location'}().toString();
+    }
+    public static void sign(net.minecraft.world.level.block.entity.SignBlockEntity sign, String text) {
+        var current = sign.${rootProject.targetMc == '26.3' ? 'getText(net.minecraft.world.level.block.entity.SignTextSlot.FRONT)' : 'getFrontText()'};
+        String[] lines = text.split("\\\\n", -1);
+        ${rootProject.targetMc == '26.3' ? 'java.util.List<net.minecraft.network.chat.Component> messages = java.util.stream.IntStream.range(0, 4).mapToObj(i -> (net.minecraft.network.chat.Component) net.minecraft.network.chat.Component.literal(i < lines.length ? lines[i] : "")).toList();\n        var updated = new net.minecraft.world.level.block.entity.SignText(messages, messages, current.getColor(), current.hasGlowingText());' : 'var updated = current;\n        for (int i = 0; i < 4; i++) updated = updated.setMessage(i, net.minecraft.network.chat.Component.literal(i < lines.length ? lines[i] : ""));'}
+        sign.setText(updated, ${rootProject.targetMc == '26.3' ? 'net.minecraft.world.level.block.entity.SignTextSlot.FRONT' : 'true'});
+    }
+    public static String textTag(String text) {
+        String json = dev.subby.core.JsonFiles.GSON.toJson(java.util.Map.of("text", text));
+        return ${newerLinks ? 'json' : 'dev.subby.core.JsonFiles.GSON.toJson(json)'};
+    }
+    public static boolean hasTag(net.minecraft.world.entity.Entity entity, String tag) {
+        return entity.${rootProject.modern ? 'entityTags' : 'getTags'}().contains(tag);
+    }
+    public static java.util.List<String> signLines(net.minecraft.world.level.block.entity.SignBlockEntity sign) {
+        var text = sign.${rootProject.targetMc == '26.3' ? 'getText(net.minecraft.world.level.block.entity.SignTextSlot.FRONT)' : 'getFrontText()'};
+        return ${rootProject.targetMc == '26.3' ? 'text.getMessages(false).stream()' : 'java.util.Arrays.stream(text.getMessages(false))'}.map(net.minecraft.network.chat.Component::getString).toList();
+    }
+    public static net.minecraft.nbt.CompoundTag parseNbt(String text) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        return net.minecraft.nbt.TagParser.${newerLinks ? 'parseCompoundFully' : 'parseTag'}(text);
+    }
+}
+"""
+        def menu = compatDir.get().file('dev/subby/minecraft/SubbyChestMenu.java').asFile
+        def inputType = rootProject.modern ? 'ContainerInput' : 'ClickType'
+        menu.text = """package dev.subby.minecraft;
+import dev.subby.core.UiMenu;
+import net.minecraft.world.Container;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.*;
+import net.minecraft.world.item.ItemStack;
+public final class SubbyChestMenu extends ChestMenu {
+    private final UiMenu menu;
+    public SubbyChestMenu(int id, Inventory inventory, Container container, UiMenu menu) {
+        super(type(menu.rows()), id, inventory, container, menu.rows());
+        this.menu = menu;
+    }
+    private static MenuType<?> type(int rows) {
+        return switch (rows) {
+            case 1 -> MenuType.GENERIC_9x1; case 2 -> MenuType.GENERIC_9x2;
+            case 3 -> MenuType.GENERIC_9x3; case 4 -> MenuType.GENERIC_9x4;
+            case 5 -> MenuType.GENERIC_9x5; default -> MenuType.GENERIC_9x6;
+        };
+    }
+    @Override public ItemStack quickMoveStack(Player player, int slot) { return ItemStack.EMPTY; }
+    @Override public boolean stillValid(Player player) { return true; }
+    @Override public void clicked(int slot, int button, ${inputType} input, Player player) {
+        if (input == ${inputType}.PICKUP && button == 0 && slot >= 0 && slot < menu.rows() * 9) menu.click(slot);
+        broadcastFullState();
     }
 }
 """
