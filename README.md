@@ -26,11 +26,15 @@ Subby Companion handles Twitch sign-in and event delivery. It must be running at
 
 **The default experience is the book.** Extra events, sounds, messages, mobs, commands, and other interactions start switched off.
 
+<div align="center">
+
 | Twitch does this | Subby records |
 | --- | --- |
 | A new subscription | The subscriber’s name |
 | A gifted subscription | The recipient’s name |
 | A shared resubscription message | The returning subscriber’s name |
+
+<div align="center">
 
 The book updates in an online player’s inventory or a bound lectern. Optional live book chests and a selected book recipient give your library a permanent home. Names are saved separately from the physical items, so you can recover a lost book.
 
@@ -71,11 +75,15 @@ Name moderation includes display/login choice, user and word filters, removal pl
 
 Download **one JAR** for your Minecraft version and platform.
 
+<div align="center">
+
 | Platform | Install |
 | --- | --- |
 | **Fabric** | Put Subby and the matching Fabric API in `mods`. Requires Fabric Loader 0.19.5+. |
 | **NeoForge** | Put Subby in `mods`. Use the matching [NeoForge version](versions.json). |
 | **Paper** | Put Subby in `plugins`. One plugin JAR covers 1.21.1–26.3. |
+
+<div align="center">
 
 Use Java **21** for Minecraft 1.21.x and Java **25** for Minecraft 26.x. Install on the server for multiplayer. Some intermediate NeoForge targets use beta loader builds.
 
