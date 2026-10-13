@@ -24,11 +24,15 @@ Subby records new subscribers, gift recipients and shared resubscription message
 
 Self-hosting [Companion](https://github.com/TAS-69/Subby-Companion/wiki/Hosting) is expected. The default `localhost` address works only when Minecraft can reach Companion on the same computer. [Step-by-step setup →](https://github.com/TAS-69/Subby/wiki/Getting-started)
 
+<div align="center">
+
 | Platform | Where it goes |
 | --- | --- |
 | Fabric | `mods` — also install the matching Fabric API |
 | NeoForge | `mods` — use the matching loader |
 | Paper | `plugins` — one JAR covers the supported range |
+
+<div align="center">
 
 Install on the server for multiplayer. Use Java 21 for 1.21.x or Java 25 for 26.x. [Exact versions →](versions.json)
 
