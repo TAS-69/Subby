@@ -1,3 +1,11 @@
+# 1.1.1
+
+- Stable release of the book-first visual menus, optional rule editor, and Companion pairing introduced in 1.1.
+- Simplified README with the PNG logo; setup, features, integration and validation guides now live in the wiki.
+- Clear host selection before pairing, with self-hosting expected and the maintainer's Falix address labelled as a development server without reliability assurances.
+- Companion console simulation has been confirmed by the maintainer to reach the subscriber book. Paid Twitch events and all optional gameplay actions are not claimed as fully accepted across every target.
+- Updated project copyright and author credits to TAS-69.
+
 # 1.1.0-beta.1
 
 - Book-first visual menus, sample previews, configurable appearance, and opt-in WHEN/IF/DO rule editing.

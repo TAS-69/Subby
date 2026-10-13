@@ -4,7 +4,7 @@
   "version": "${version}",
   "name": "Subby",
   "description": "Turn Twitch subscriptions into a living Minecraft subscriber library.",
-  "authors": ["Subby contributors"],
+  "authors": ["TAS-69"],
   "license": "MIT",
   "icon": "assets/subby/icon.png",
   "environment": "*",

@@ -3,7 +3,7 @@ version: '${version}'
 main: dev.subby.paper.SubbyPaper
 api-version: '1.21'
 description: Twitch subscriptions become a living Minecraft book.
-authors: [Subby contributors]
+authors: [TAS-69]
 commands:
   subby:
     description: Manage Twitch and subscriber books.

@@ -14,14 +14,12 @@ $jars = Get-ChildItem -LiteralPath $releaseDirectory -Filter "*-$Version.jar"
 if ($jars.Count -ne 33) { throw "Expected 33 installable JARs, found $($jars.Count). Run the full build matrix first." }
 $jars | Get-FileHash -Algorithm SHA256 | ForEach-Object { "$($_.Hash.ToLower())  $(Split-Path -Leaf $_.Path)" } | Set-Content -LiteralPath (Join-Path $releaseDirectory 'SHA256SUMS.txt') -Encoding ascii
 $jars | Copy-Item -Destination $downloadStage
-$rootFiles = @('README.md','VALIDATION.md','CHANGELOG.md','LICENSE','Subby-logo.svg','versions.json')
+$rootFiles = @('README.md','CHANGELOG.md','LICENSE','Subby-logo.png','Subby-logo.svg','versions.json')
 foreach ($file in $rootFiles) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $downloadStage
     Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $sourceStage
 }
 Copy-Item -LiteralPath (Join-Path $releaseDirectory 'SHA256SUMS.txt'),(Join-Path $releaseDirectory 'build-results.json') -Destination $downloadStage
-Copy-Item -LiteralPath 'docs' -Destination $downloadStage -Recurse
-Copy-Item -LiteralPath 'docs' -Destination $sourceStage -Recurse
 New-Item -ItemType Directory -Force -Path (Join-Path $downloadStage 'gradle') | Out-Null
 Copy-Item -LiteralPath 'gradle\NOTICE','gradle\LICENSE' -Destination (Join-Path $downloadStage 'gradle')
 foreach ($file in @('build.gradle','settings.gradle','gradle.properties','gradlew','gradlew.bat','.gitignore','.gitattributes')) {
