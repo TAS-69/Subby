@@ -1,0 +1,29 @@
+repositories { maven { url = 'https://repo.papermc.io/repository/maven-public/' } }
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+base.archivesName = 'subby-paper-1.21.1-26.3'
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+    implementation project(':core')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.116.3'
+    testImplementation 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+test { useJUnitPlatform() }
+configurations { latestPaper }
+dependencies { latestPaper 'io.papermc.paper:paper-api:26.3.build.178-stable' }
+tasks.register('compileLatestApi', JavaCompile) {
+    source = sourceSets.main.java
+    classpath = configurations.latestPaper + project(':core').sourceSets.main.output
+    destinationDirectory = layout.buildDirectory.dir('latest-api-check')
+    javaCompiler = javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(25) }
+    dependsOn project(':core').tasks.named('classes')
+}
+tasks.named('check') { dependsOn 'compileLatestApi' }
+tasks.named('jar') {
+    from project(':core').sourceSets.main.output
+    from { configurations.runtimeClasspath.findAll { it.name.startsWith('gson-') }.collect { zipTree(it) } }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude 'META-INF/*.SF', 'META-INF/*.RSA', 'META-INF/*.DSA'
+}
+processResources { filesMatching('plugin.yml') { expand version: project.version } }

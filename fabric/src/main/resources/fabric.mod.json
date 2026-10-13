@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "subby",
+  "version": "${version}",
+  "name": "Subby",
+  "description": "Turn Twitch subscriptions into a living Minecraft subscriber library.",
+  "authors": ["Subby contributors"],
+  "license": "MIT",
+  "icon": "assets/subby/icon.png",
+  "environment": "*",
+  "entrypoints": { "main": ["dev.subby.fabric.SubbyFabric"] },
+  "depends": { "fabricloader": ">=0.19.5", "fabric-api": "*", "minecraft": "${mc}", "java": ">=${java}" }
+}

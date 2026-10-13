@@ -1,0 +1,15 @@
+.gradle/
+**/build/
+**/run/
+.idea/
+*.iml
+.tools/
+**/credentials.json
+**/subscribers.jsonl
+**/library.json
+**/lecterns.json
+*-versions.xml
+fabric-loaders.json
+minecraft-versions.json
+dist/
+mockbukkit-*.xml

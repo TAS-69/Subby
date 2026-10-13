@@ -1,0 +1,15 @@
+name: Subby
+version: '${version}'
+main: dev.subby.paper.SubbyPaper
+api-version: '1.21'
+description: Twitch subscriptions become a living Minecraft book.
+authors: [Subby contributors]
+commands:
+  subby:
+    description: Manage Twitch and subscriber books.
+    usage: /subby help
+    permission: subby.admin
+permissions:
+  subby.admin:
+    description: Link Twitch, manage books, and configure Subby.
+    default: op

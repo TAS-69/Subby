@@ -1,0 +1,14 @@
+pluginManagement {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        maven { url = 'https://maven.neoforged.net/releases' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+rootProject.name = 'Subby'
+include 'core'
+def platform = providers.gradleProperty('platform').getOrElse('all')
+if (platform in ['all', 'fabric']) include 'fabric'
+if (platform in ['all', 'neoforge']) include 'neoforge'
+if (platform in ['all', 'paper']) include 'paper'

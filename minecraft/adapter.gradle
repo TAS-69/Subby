@@ -1,0 +1,39 @@
+sourceSets.main.java.srcDir rootProject.file('minecraft/src/main/java')
+def compatDir = layout.buildDirectory.dir('generated/subby')
+sourceSets.main.java.srcDir compatDir
+tasks.register('generateCompat') {
+    outputs.dir compatDir
+    inputs.property 'mc', rootProject.targetMc
+    doLast {
+        def newerPermissions = rootProject.modern || rootProject.targetMc == '1.21.11'
+        def f = compatDir.get().file('dev/subby/minecraft/Compat.java').asFile
+        f.parentFile.mkdirs()
+        f.text = """package dev.subby.minecraft;
+import net.minecraft.commands.CommandSourceStack;
+public final class Compat {
+    public static boolean allowed(CommandSourceStack source) {
+        return ${newerPermissions ? 'source.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)' : 'source.hasPermission(2)'};
+    }
+}
+"""
+    }
+}
+compileJava.dependsOn 'generateCompat'
+tasks.named('sourcesJar') { dependsOn 'generateCompat' }
+dependencies { implementation project(':core') }
+tasks.named('jar') { from project(':core').sourceSets.main.output }
+
+
+sourceSets {
+    smoke {
+        java.srcDir rootProject.file('integration/src/main/java')
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+        runtimeClasspath += output + compileClasspath + sourceSets.main.runtimeClasspath
+    }
+}
+tasks.register('smokeBooks', JavaExec) {
+    dependsOn 'smokeClasses'
+    classpath = sourceSets.smoke.runtimeClasspath
+    mainClass = 'dev.subby.integration.BookSmoke'
+    javaLauncher = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(rootProject.gameJava) }
+}

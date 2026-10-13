@@ -1,0 +1,17 @@
+buildscript {
+    repositories { maven { url = 'https://maven.neoforged.net/releases' }; mavenCentral(); gradlePluginPortal() }
+    dependencies { classpath 'net.neoforged:moddev-gradle:2.0.148' }
+}
+apply plugin: 'net.neoforged.moddev'
+apply from: rootProject.file('minecraft/adapter.gradle')
+base.archivesName = "subby-neoforge-${rootProject.targetMc}"
+neoForge {
+    version = rootProject.targets[rootProject.targetMc].neoForge
+    runs { server { server(); programArguments.add '--nogui' } }
+    mods { subby { sourceSet sourceSets.main } }
+}
+processResources {
+    inputs.property 'mc', rootProject.targetMc
+    inputs.property 'version', project.version
+    filesMatching('META-INF/neoforge.mods.toml') { expand version: project.version, mc: rootProject.targetMc }
+}

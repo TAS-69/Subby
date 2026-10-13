@@ -1,0 +1,24 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="MIT"
+
+[[mods]]
+modId="subby"
+version="${version}"
+displayName="Subby"
+logoFile="subby-logo.png"
+description='''Turn Twitch subscriptions into a living Minecraft subscriber library.'''
+
+[[dependencies.subby]]
+modId="neoforge"
+type="required"
+versionRange="[21,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.subby]]
+modId="minecraft"
+type="required"
+versionRange="[${mc}]"
+ordering="NONE"
+side="BOTH"

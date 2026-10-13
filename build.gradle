@@ -1,0 +1,49 @@
+import groovy.json.JsonSlurper
+
+ext.targets = new JsonSlurper().parse(file('versions.json'))
+ext.targetMc = providers.gradleProperty('mc').get()
+if (!targets.containsKey(targetMc)) throw new GradleException("Unknown Minecraft version: $targetMc")
+ext.modern = targetMc.startsWith('26.')
+ext.gameJava = modern ? 25 : 21
+ext.fabricLoader = '0.19.5'
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+    if (rootProject.hasProperty('isolatedBuild')) {
+        layout.buildDirectory = rootProject.file("build/targets/${rootProject.targetMc}/${project.name}")
+    }
+    repositories {
+        mavenCentral()
+        maven { url = 'https://maven.neoforged.net/releases' }
+        maven { url = 'https://maven.fabricmc.net/' }
+    }
+}
+subprojects {
+    apply plugin: 'java-library'
+    java {
+        toolchain.languageVersion = JavaLanguageVersion.of(rootProject.gameJava)
+        withSourcesJar()
+    }
+    tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+    tasks.withType(Jar).configureEach {
+        preserveFileTimestamps = false
+        reproducibleFileOrder = true
+    }
+    if (project.name != 'core') {
+        tasks.named('processResources') {
+            from(rootProject.file('Subby-logo.svg')) { into 'META-INF' }
+        }
+    }
+}
+
+tasks.register('collectJars', Copy) {
+    dependsOn subprojects.collect { it.tasks.named('build') }
+    into layout.buildDirectory.dir('releases')
+    subprojects.findAll { it.name != 'core' }.each { p ->
+        from(p.layout.buildDirectory.dir('libs')) {
+            include '*.jar'
+            exclude '*-sources.jar', '*-dev.jar'
+        }
+    }
+}

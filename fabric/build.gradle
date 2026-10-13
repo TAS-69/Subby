@@ -1,0 +1,26 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies { classpath 'net.fabricmc:fabric-loom:1.17.21' }
+}
+apply plugin: rootProject.modern ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+apply from: rootProject.file('minecraft/adapter.gradle')
+base.archivesName = "subby-fabric-${rootProject.targetMc}"
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.targetMc}"
+    if (!rootProject.modern) mappings loom.officialMojangMappings()
+    add(rootProject.modern ? 'implementation' : 'modImplementation', "net.fabricmc:fabric-loader:${rootProject.fabricLoader}")
+    add(rootProject.modern ? 'implementation' : 'modImplementation', "net.fabricmc.fabric-api:fabric-api:${rootProject.targets[rootProject.targetMc].fabricApi}")
+}
+tasks.named('jar') { duplicatesStrategy = DuplicatesStrategy.EXCLUDE }
+processResources {
+    inputs.property 'mc', rootProject.targetMc
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') {
+        expand version: project.version, mc: rootProject.targetMc, java: rootProject.gameJava
+    }
+}
+loom { runs { server { server(); programArg '--nogui' } } }
