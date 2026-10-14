@@ -16,7 +16,11 @@ Minecraft **1.21.1–26.3** · **Fabric · NeoForge · Paper**
 
 Subby records new subscribers, gift recipients and shared resubscription messages. Pages and volumes grow automatically. Carry your book, put it on a lectern, or recover it if it gets lost.
 
+<div align="center">
+
 ## Get your first book
+
+</div>
 
 1. **Install** the JAR for your Minecraft version and platform.
 2. **Set the host first:** open `/subby` → **Advanced → Connection settings → Companion address** and enter your self-hosted Companion URL.
